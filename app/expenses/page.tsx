@@ -14,6 +14,7 @@ interface Expense {
   amount: number;
   category: ExpenseCategory;
   date: string;
+  receiptUrl?: string;
 }
 
 export default function ExpensesPage() {

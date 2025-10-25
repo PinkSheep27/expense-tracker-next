@@ -1,14 +1,17 @@
 'use client'
 
 import React from 'react';
-export type ExpenseCategory = 'Food' | 'Transportation' | 'Entertainment' | 'Other';
+export type ExpenseCategory = 'Food' | 'Transportation' | 'Entertainment' | 'Shopping' | 'Other';
 
 export interface ExpenseCardProps {
+  //Mandatory
   id: number;
   description: string;
   amount: number;
   category: ExpenseCategory;         
   date: string;
+  //Optional
+  receiptUrl?: string;
   onDelete?: (id: number) => void;    
   highlighted?: boolean;              
   showCategory?: boolean;            
@@ -20,6 +23,7 @@ const ExpenseCard: React.FC<ExpenseCardProps> = ({
   amount,
   category,
   date,
+  receiptUrl,
   highlighted = false,
   showCategory = true,
   onDelete
@@ -67,6 +71,24 @@ const ExpenseCard: React.FC<ExpenseCardProps> = ({
         <h3 className="mb-2 text-base font-medium text-gray-900">{description}</h3>
         <p className="m-0 text-lg font-bold text-green-600">{formattedAmount}</p>
       </div>
+      
+      {/* Receipt display section */}
+      {receiptUrl && (
+        <div className="mt-3 border-t border-gray-100 pt-3">
+          <div className="flex items-center gap-3">
+            <a 
+              href={receiptUrl} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 hover:underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <span>View Receipt</span>
+            </a>
+            <span className="text-xs text-gray-500">• Attached</span>
+          </div>
+        </div>
+      )}
         
         {onDelete && (
           <div className="flex justify-end pt-2 border-t border-gray-100">
