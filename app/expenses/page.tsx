@@ -2,11 +2,11 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import ExpenseForm from '@/components/ExpenseForm/ExpenseForm'
-import ExpenseList from '@/components/ExpenseList/ExpenseList'
-import ExpenseSummary from '@/components/ExpenseSummary/ExpenseSummary'
-import Header from '@/components/Header/Header'
-import { type ExpenseCategory } from '@/components/ExpenseCard/ExpenseCard'
+import ExpenseForm from '@/app/components/ExpenseForm/ExpenseForm'
+import ExpenseList from '@/app/components/ExpenseList/ExpenseList'
+import ExpenseSummary from '@/app/components/ExpenseSummary/ExpenseSummary'
+import Header from '@/app/components/Header/Header'
+import { type ExpenseCategory } from '@/app/components/ExpenseCard'
 
 interface Expense {
   id: number;

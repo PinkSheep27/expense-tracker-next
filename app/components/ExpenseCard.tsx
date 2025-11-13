@@ -5,14 +5,14 @@ export type ExpenseCategory = 'Food' | 'Transportation' | 'Entertainment' | 'Sho
 
 export interface ExpenseCardProps {
   //Mandatory
-  id: number;
+  id: string;
   description: string;
   amount: number;
   category: ExpenseCategory;         
   date: string;
   //Optional
   receiptUrl?: string;
-  onDelete?: (id: number) => void;    
+  onDelete?: (id: string) => void;    
   highlighted?: boolean;              
   showCategory?: boolean;            
 }
