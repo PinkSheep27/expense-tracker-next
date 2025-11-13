@@ -1,92 +1,48 @@
-'use client'
-
-import { useState } from 'react'
 import Link from 'next/link'
-import ExpenseForm from '@/app/components/ExpenseForm/ExpenseForm'
-import ExpenseList from '@/app/components/ExpenseList/ExpenseList'
-import ExpenseSummary from '@/app/components/ExpenseSummary/ExpenseSummary'
-import Header from '@/app/components/Header/Header'
-import { type ExpenseCategory } from '@/app/components/ExpenseCard'
 
-interface Expense {
-  id: number;
-  description: string;
-  amount: number;
-  category: ExpenseCategory;
-  date: string;
-  receiptUrl?: string;
-}
-
-export default function ExpensesPage() {
-    // State management - SAME as Vite!
-    const [expenses, setExpenses] = useState<Expense[]>([
-        {
-        id: 1,
-        description: "Lunch at downtown cafe",
-        amount: 12.50,
-        category: "Food",
-        date: "2024-01-15"
-        },
-        {
-        id: 2,
-        description: "Monthly bus pass",
-        amount: 95.00,
-        category: "Transportation", 
-        date: "2024-01-14"
-        },
-        {
-        id: 3,
-        description: "Movie tickets",
-        amount: 25.00,
-        category: "Entertainment", 
-        date: "2024-01-13"
-        }
-    ]);
-
-    const handleAddExpense = (expenseData: Omit<Expense, 'id'>): void => {
-        const newExpense: Expense = {
-        ...expenseData,
-        id: Date.now()
-        };
-        setExpenses(prev => [...prev, newExpense]);
-    };
-
-    const handleDeleteExpense = (id: number): void => {
-        setExpenses(prev => prev.filter(expense => expense.id !== id));
-    };
-
-    const totalAmount = expenses.reduce((sum, expense) => sum + expense.amount, 0);
-
+export default function Home() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto p-5">
-        <Header 
-          title="Expense Tracker" 
-          subtitle="Manage your spending with confidence" 
-        />
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+      <div className="max-w-4xl w-full">
         
-        <main className="space-y-6">
-          <ExpenseSummary 
-            totalAmount={totalAmount}
-            expenseCount={expenses.length}
-            period="This Month"
-          />
-          
-          <ExpenseForm onSubmit={handleAddExpense} />
-          
-          <ExpenseList 
-            expenses={expenses} 
-            onDeleteExpense={handleDeleteExpense} 
-          />
-        </main>
+        <div className="text-center mb-12">
+          <h1 className="text-5xl font-bold text-gray-900 mb-4">
+            Welcome to Expense Tracker
+          </h1>
+          <p className="text-xl text-gray-600">
+            Take control of your finances. Track expenses, analyze spending, and make informed decisions.
+          </p>
+        </div>
 
-        <div className="mt-8 text-center">
-          <Link href="/" className="text-blue-600 hover:text-blue-800 inline-flex items-center gap-2">
-            <span>←</span>
-            <span>Back to Home</span>
+        <div className="grid md:grid-cols-3 gap-6 mb-8">
+          
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h3 className="font-semibold text-lg mb-2">Track Spending</h3>
+            <p className="text-gray-600 text-sm">Monitor all expenses in one place</p>
+          </div>
+          
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h3 className="font-semibold text-lg mb-2">See Totals</h3>
+            <p className="text-gray-600 text-sm">View total spending at a glance</p>
+          </div>
+          
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h3 className="font-semibold text-lg mb-2">Categorize</h3>
+            <p className="text-gray-600 text-sm">Organize by category</p>
+          </div>
+
+        </div>
+
+        {/* UPDATED LINK - Points to dashboard instead */}
+        <div className="text-center">
+          <Link 
+            href="/dashboard"
+            className="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-lg"
+          >
+            Get Started →
           </Link>
         </div>
       </div>
     </div>
-  );
+  )
 }
