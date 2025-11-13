@@ -1,41 +1,96 @@
-import Link from 'next/link'
+'use client';
 
-export default function Home() {
-  return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-4xl mx-auto text-center">
-        <h1 className="text-5xl font-bold text-gray-900 mb-6">
-          Welcome to Expense Tracker
-        </h1>
-        <p className="text-xl text-gray-600 mb-8">
-          Take control of your finances. Track expenses, analyze spending, and make informed decisions.
-        </p>
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { isAuthenticated, signOut, authenticatedFetch } from '@/lib/auth';
 
-        <div className="grid md:grid-cols-3 gap-6 mb-12">
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h3 className="text-gray-900 text-lg font-semibold mb-2">Track Spending</h3>
-            <p className="text-gray-600">Monitor all expenses in one place</p>
-          </div>
-          
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h3 className="text-gray-900 text-lg font-semibold mb-2">See Totals</h3>
-            <p className="text-gray-600">View total spending at a glance</p>
-          </div>
-          
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h3 className="text-gray-900 text-lg font-semibold mb-2">Categorize</h3>
-            <p className="text-gray-600">Organize by category</p>
-          </div>
-        </div>
+export default function HomePage() {
+  const router = useRouter();
+  const [expenses, setExpenses] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-        <Link 
-          href="/expenses"
-          className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-4 rounded-lg shadow-lg transition"
-        >
-          View Your Expenses →
-        </Link>
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      router.push('/signin');
+      return;
+    }
+    loadExpenses();
+  }, [router]);
+
+  async function loadExpenses() {
+    try {
+      const response = await authenticatedFetch('/api/expenses');
+      
+      if (!response.ok) {
+        console.error('Failed to fetch expenses');
+        signOut();
+        return;
+      }
+      
+      const data = await response.json();
+      setExpenses(data.expenses || []);
+    } catch (error) {
+      console.error('Error loading expenses:', error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleSignOut() {
+    signOut();
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-gray-600">Loading...</p>
       </div>
-    </div>
-  )
-}
+    );
+  }
 
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white shadow">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+          <h1 className="text-2xl font-bold text-gray-900">
+            Expense Tracker
+          </h1>
+          <button
+            onClick={handleSignOut}
+            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+          >
+            Sign Out
+          </button>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-4 py-8">
+        <h2 className="text-xl font-semibold mb-4">Your Expenses</h2>
+        
+        {expenses.length === 0 ? (
+          <p className="text-gray-600">No expenses yet. Start tracking!</p>
+        ) : (
+          <div className="bg-white rounded-lg shadow">
+            {expenses.map((expense: any) => (
+              <div
+                key={expense.id}
+                className="p-4 border-b last:border-b-0 flex justify-between items-center"
+              >
+                <div>
+                  <p className="font-semibold">{expense.category}</p>
+                  <p className="text-sm text-gray-600">{expense.description}</p>
+                  <p className="text-xs text-gray-400">
+                    {new Date(expense.date).toLocaleDateString()}
+                  </p>
+                </div>
+                <p className="text-lg font-bold text-green-600">
+                  ${expense.amount}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}

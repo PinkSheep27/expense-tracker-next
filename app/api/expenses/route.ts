@@ -1,59 +1,78 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/lib/db';
+import { expenses } from '@/lib/db/schema';
+import { eq, desc } from 'drizzle-orm';
+import { authenticateRequest } from '@/lib/auth-middleware'; 
 
-// In-memory storage (temporary - database comes later)
-let expenses = [
+export async function GET(request: NextRequest) {
+  const authResult = await authenticateRequest(request);
+  
+  if(!authResult.authenticated) return authResult.error;
+
+  const { userId } = authResult;
+
+  try
   {
-    id: 1,
-    description: "Lunch at downtown cafe",
-    amount: 12.50,
-    category: "Food",
-    date: "2024-01-15"
-  },
-  {
-    id: 2,
-    description: "Monthly bus pass",
-    amount: 95.00,
-    category: "Transportation",
-    date: "2024-01-14"
+    const userExpenses = await db
+      .select()
+      .from(expenses)
+      .where(eq(expenses.userId, userId))
+      .orderBy(desc(expenses.date))
+    return NextResponse.json({
+      expenses: userExpenses,
+      count: userExpenses.length
+    })
   }
-]
-
-let nextId = 3
-
-// GET /api/expenses - List all expenses
-export async function GET() {
-  return NextResponse.json(expenses)
+  catch(error)
+  {
+    console.error('Error fetching expenses: ', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch expenses'},
+      { status: 500 }
+    )
+  }
 }
 
-// POST /api/expenses - Create new expense
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const authResult = await authenticateRequest(request);
+
+  if(!authResult.authenticated) return authResult.error;
+
+  const { userId } = authResult;
+  
   try {
-    const body = await request.json()
-    
-    // Validate required fields
-    if (!body.description || !body.amount || !body.category || !body.date) {
+    const body = await request.json();
+    const { amount, category, description, date, receiptUrl } = body;
+
+    if(!amount || !category || !date)
+    {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Amount, category, and date are required' },
         { status: 400 }
-      )
+      );
     }
+
+    const newExpense = await db
+      .insert(expenses)
+      .values({
+        userId,
+        amount: amount.toString(),
+        category,
+        description: description || null,
+        date: new Date(date),
+        receiptUrl: receiptUrl || null
+      })
+      .returning();
     
-    // Create new expense
-    const newExpense = {
-      id: nextId++,
-      description: body.description,
-      amount: parseFloat(body.amount),
-      category: body.category,
-      date: body.date
-    }
-    
-    expenses.push(newExpense)
-    
-    return NextResponse.json(newExpense, { status: 201 })
+    return NextResponse.json({
+      message: 'Expense created successfully',
+      expense: newExpense[0]
+    }, { status: 201 });
   } catch (error) {
+    console.error('Error creating expense:', error);
     return NextResponse.json(
-      { error: 'Invalid request body' },
-      { status: 400 }
-    )
+      { error: 'Failed to create expense'},
+      { status: 500 }
+    );
   }
 }

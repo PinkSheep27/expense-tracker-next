@@ -1,10 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { s3Client, BUCKET_NAME } from '@/lib/s3';
+import { authenticateRequest } from '@/lib/auth-middleware';
+
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 export async function POST(request: NextRequest) {
+  const authResult = await authenticateRequest(request);
+
+  if(!authResult.authenticated) return authResult.error;
+
+  const { userId } = authResult;
+
   try {
-    // 1. Extract file from multipart/form-data request
     const formData = await request.formData();
     const file = formData.get('receipt') as File;
     
@@ -15,7 +24,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 2. Validate file type (accept images only)
     if (!file.type.startsWith('image/')) {
       return NextResponse.json(
         { error: 'Only image files are allowed' },
@@ -23,8 +31,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 3. Validate file size (limit: 5MB)
-    const MAX_FILE_SIZE = 5 * 1024 * 1024;
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
         { error: 'File size must be less than 5MB' },
@@ -32,39 +38,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 4. Convert the uploaded File object into a Buffer
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // 5. Create a safe, unique filename
-    const timestamp = Date.now();
     const sanitizedFilename = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-    const filename = `${timestamp}-${sanitizedFilename}`;
 
-    // 6. Define the S3 upload command
+    const key = `${userId}/receipts/${Date.now()}-${sanitizedFilename}`;
+
     const command = new PutObjectCommand({
-      Bucket: BUCKET_NAME,     // Target bucket
-      Key: filename,           // Object key (file path in S3)
-      Body: buffer,            // File contents
-      ContentType: file.type,  // Preserve file type (e.g., image/png)
+      Bucket: BUCKET_NAME,
+      Key: key,
+      Body: buffer,
+      ContentType: file.type,
     });
 
-    // 7. Upload file to S3
     await s3Client.send(command);
 
-    // 8. Build file URL (LocalStack format in development)
-    const fileUrl = `http://localhost:4566/${BUCKET_NAME}/${filename}`;
+    const fileUrl = `${process.env.AWS_ENDPOINT_URL}/${BUCKET_NAME}/${key}`;
 
-    // 9. Return success response with file details
     return NextResponse.json({
       success: true,
-      filename,
+      key,
       url: fileUrl,
       message: 'Receipt uploaded successfully',
     }, { status: 201 });
     
   } catch (error) {
-    // 10. Handle unexpected errors
     console.error('Receipt upload error:', error);
     return NextResponse.json(
       { error: 'Failed to upload receipt' },
